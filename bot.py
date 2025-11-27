@@ -27,9 +27,15 @@ async def echo(interaction: discord.Interaction, texte: str):
 async def say(interaction: discord.Interaction, texte: str):
     await interaction.response.send_message(f"Tu as dit : {texte}")
 
+
+from discord import Activity, ActivityType
+
 @client.event
 async def on_ready():
     await tree.sync()
-    print(f"🤖 Connecté en tant que {client.user}")
+    activity = Activity(type=ActivityType.streaming, name="Sakura High FR RP", url="")
+    await client.change_presence(activity=activity)
+    print(f"🤖 Connecté et en streaming !")
 
 client.run(TOKEN)
+
