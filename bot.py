@@ -9,43 +9,98 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 # === Configuration ===
-ALLOWED_GUILD_ID = 1396857214546874378  # Remplace par ton serveur
-ROLE_ID = 1443515266234581052           # Remplace par le rôle à ping
+ALLOWED_GUILD_ID = 1396857214546874378  # ID de ton serveur
+ROLE_ID = 1443515266234581052           # ID du rôle à ping
+ALLOWED_ROLES = [
+    1396857328216707103,
+    1396984978717409421,
+    1396962683844300810,
+    1405281099612950528,
+    1416810690945093662,
+    1428466417681825854,
+    1410239639423553606
+]
+# === Salons de logs ===
+LOGS_MESSAGES = 1441063853080444928      # ID salon pour messages
+LOGS_MODERATION = 1443553704308510750   # ID salon pour modération
+LOGS_COMMANDS = 1443553865692745739     # ID salon pour commandes
 
 # Intents
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
+intents.members = True
 
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
-# Statut du bot
+# --- Fonctions utilitaires ---
+def role_required():
+    async def predicate(interaction: discord.Interaction) -> bool:
+        return any(role.id in ALLOWED_ROLES for role in interaction.user.roles)
+    return app_commands.check(predicate)
+
+async def send_log(channel_id: int, title: str, description: str, color=discord.Color.green()):
+    channel = client.get_channel(channel_id)
+    if channel:
+        embed = discord.Embed(title=title, description=description, color=color)
+        await channel.send(embed=embed)
+
+# === Statut du bot ===
 @client.event
 async def on_ready():
     await tree.sync()
-    activity = Activity(type=ActivityType.watching, name="vos commandes !")
+    activity = Activity(type=ActivityType.watching, name="Sakura High FR RP | On vous aime <3")
     await client.change_presence(activity=activity)
     print(f"🤖 Connecté en tant que {client.user}")
 
-# Limiter le bot aux serveurs autorisés
+# === Limiter le bot aux serveurs autorisés ===
 @client.event
 async def on_guild_join(guild):
     if guild.id != ALLOWED_GUILD_ID:
         await guild.leave()
         print(f"🚫 J'ai quitté le serveur non autorisé : {guild.name}")
 
+# === Logs modération ===
+@client.event
+async def on_member_join(member):
+    await send_log(LOGS_MODERATION, "Nouveau membre", f"{member.mention} a rejoint le serveur.")
+
+@client.event
+async def on_member_remove(member):
+    await send_log(LOGS_MODERATION, "Membre parti", f"{member.mention} a quitté le serveur.")
+
+@client.event
+async def on_member_ban(guild, user):
+    await send_log(LOGS_MODERATION, "Membre banni", f"{user.mention} a été banni.", color=discord.Color.dark_red())
+
+@client.event
+async def on_member_unban(guild, user):
+    await send_log(LOGS_MODERATION, "Membre débanni", f"{user.mention} a été débanni.", color=discord.Color.dark_green())
+
+# === Logs messages ===
+@client.event
+async def on_message_delete(message):
+    if message.author.bot:
+        return
+    desc = f"Message de {message.author.mention} supprimé dans {message.channel.mention} :\n{message.content}"
+    await send_log(LOGS_MESSAGES, "Message supprimé", desc, color=discord.Color.red())
+
 # === Commandes ===
 
 # /ping
 @tree.command(name="ping", description="Le bot répond Pong!")
+@role_required()
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message("Pong 🏓")
+    await send_log(LOGS_COMMANDS, "Commande /ping", f"{interaction.user.mention} a utilisé la commande /ping", color=discord.Color.blue())
 
 # /echo
 @tree.command(name="echo", description="Répète ton message")
+@role_required()
 async def echo(interaction: discord.Interaction, texte: str):
     await interaction.response.send_message(texte)
+    await send_log(LOGS_COMMANDS, "Commande /echo", f"{interaction.user.mention} a utilisé /echo : {texte}", color=discord.Color.blue())
 
 # Liste de 100 questions du jour
 questions = [
@@ -157,6 +212,7 @@ questions = [
 
 # /qdj
 @tree.command(name="qdj", description="Envoie la question du jour")
+@role_required()
 async def qdj(interaction: discord.Interaction):
     if interaction.guild.id != ALLOWED_GUILD_ID:
         await interaction.response.send_message("❌ Ce bot n'est pas autorisé sur ce serveur.", ephemeral=True)
@@ -177,6 +233,13 @@ async def qdj(interaction: discord.Interaction):
     await thread.send("Répondez ici ! 📝")
 
     await interaction.response.send_message("✅ Question du jour publiée !", ephemeral=True)
+    await send_log(LOGS_COMMANDS, "Commande /qdj", f"{interaction.user.mention} a publié la question : {qdj_text}", color=discord.Color.blue())
 
-# Lancer le bot
+# Gestion des erreurs pour les checks de rôle
+@tree.error
+async def on_app_command_error(interaction: discord.Interaction, error):
+    if isinstance(error, app_commands.CheckFailure):
+        await interaction.response.send_message("❌ Vous n'avez pas la permission pour utiliser cette commande.", ephemeral=True)
+
+# === Lancer le bot ===
 client.run(TOKEN)
