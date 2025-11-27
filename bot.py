@@ -32,10 +32,19 @@ from discord import Activity, ActivityType
 
 @client.event
 async def on_ready():
+    
+    allowed_guilds = [1396857214546874378]  # ID du serveur autorisé
+
+@client.event
+async def on_guild_join(guild):
+    if guild.id not in allowed_guilds:
+        await guild.leave()
+        
     await tree.sync()
     activity = Activity(type=ActivityType.streaming, name="Sakura High FR RP", url="")
     await client.change_presence(activity=activity)
     print(f"🤖 Connecté et en streaming !")
 
 client.run(TOKEN)
+
 
