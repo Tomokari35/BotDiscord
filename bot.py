@@ -235,6 +235,120 @@ async def qdj(interaction: discord.Interaction):
     await interaction.response.send_message("✅ Question du jour publiée !", ephemeral=True)
     await send_log(LOGS_COMMANDS, "Commande /qdj", f"{interaction.user.mention} a publié la question : {qdj_text}", color=discord.Color.blue())
 
+
+# Booster
+BOOST_CHANNEL_ID = 1399499262647075057  # salon pour afficher les boosts
+BOOST_GIF = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZTB6Z29iZDhrdGppaXRjcWZveDI0bHppanJ1ajdzcGY4Zmpwend2YiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Xl0oVz3eb9mfu/giphy.gif"  # GIF à afficher
+
+@client.event
+async def on_member_update(before, after):
+    # Vérifie si la personne a commencé à booster le serveur
+    if not before.premium_since and after.premium_since:
+        channel = client.get_channel(BOOST_CHANNEL_ID)
+        if channel:
+            embed = discord.Embed(
+                title=f"✨ Merci à toi {after.name} pour le boost !",
+                description="Ton soutien fait vivre le serveur ! 💖",
+                color=discord.Color.purple()
+            )
+            embed.set_thumbnail(url=after.display_avatar.url)
+            embed.set_image(url=BOOST_GIF)
+            await channel.send(embed=embed)
+
+            # Envoi un MP au booster
+            try:
+                dm_embed = discord.Embed(
+                    title="Merci pour ton boost ! ✨",
+                    description="Ton soutien nous aide beaucoup, MERCIII !",
+                    color=discord.Color.purple()
+                )
+                dm_embed.set_image(url=BOOST_GIF)
+                await after.send(embed=dm_embed)
+            except:
+                print(f"Impossible d'envoyer un MP à {after.name}")
+# ----- TEST -----
+@tree.command(name="testboost", description="Teste l'embed de boost")
+@role_required()
+async def testboost(interaction: discord.Interaction):
+    user = interaction.user  # on utilise la personne qui lance la commande
+    channel = client.get_channel(BOOST_CHANNEL_ID)
+    if channel:
+        embed = discord.Embed(
+            title=f"✨ Merci à toi {user.name} pour le boost !",
+            description="Ton soutien fait vivre le serveur ! 💖",
+            color=discord.Color.purple()
+        )
+        embed.set_thumbnail(url=user.display_avatar.url)
+        embed.set_image(url=BOOST_GIF)
+        await channel.send(embed=embed)
+
+        # Envoi un MP de test
+        try:
+            dm_embed = discord.Embed(
+                title="Merci pour ton boost ! ✨",
+                description="Ton soutien nous aide beaucoup ! Profite des avantages du serveur !",
+                color=discord.Color.purple()
+            )
+            dm_embed.set_image(url=BOOST_GIF)
+            await user.send(embed=dm_embed)
+        except:
+            await interaction.response.send_message("Impossible d'envoyer le MP de test.", ephemeral=True)
+
+    await interaction.response.send_message("✅ Test boost envoyé !", ephemeral=True)
+
+
+# Bienvenue
+WELCOME_GIF = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZTB6Z29iZDhrdGppaXRjcWZveDI0bHppanJ1ajdzcGY4Zmpwend2YiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/DIYVI7Iz4dmnu/giphy.gif"  # GIF de bienvenue
+
+@client.event
+async def on_member_join(member):
+    # Log modération
+    await send_log(LOGS_MODERATION, "Nouveau membre", f"{member.mention} a rejoint le serveur.")
+
+    # Envoi MP de bienvenue
+    try:
+        embed = discord.Embed(
+            title=f"Bienvenue {member.name} ! 🎉",
+            description=(
+                "Bienvenue sur **Sakura High FR RP** !\n\n"
+                "Voici ce que tu peux faire sur le serveur :\n"
+                "- Lire les règles\n"
+                "- Participer aux salons\n"
+                "- Découvrir les événements et QdJ\n"
+            ),
+            color=discord.Color.green()
+        )
+        embed.set_image(url=WELCOME_GIF)
+        await member.send(embed=embed)
+    except:
+        print(f"Impossible d'envoyer un MP à {member.name}")
+# ----- TEST -----
+@tree.command(name="testarriver", description="Teste l'embed de bienvenue")
+@role_required()
+async def testarriver(interaction: discord.Interaction):
+    user = interaction.user  # on utilise la personne qui lance la commande
+    try:
+        embed = discord.Embed(
+            title=f"Bienvenue {user.name} ! 🎉",
+            description=(
+                "Bienvenue sur **Sakura High FR RP** !\n\n"
+                "Voici ce que tu peux faire sur le serveur :\n"
+                "- Lire les règles\n"
+                "- Participer aux salons\n"
+                "- Découvrir les événements et QDJ\n"
+            ),
+            color=discord.Color.green()
+        )
+        embed.set_image(url=WELCOME_GIF)
+        await user.send(embed=embed)
+    except:
+        await interaction.response.send_message("Impossible d'envoyer le MP de test.", ephemeral=True)
+        return
+
+    await send_log(LOGS_MODERATION, "Test arrivée", f"{user.mention} a reçu l'embed de bienvenue (test).")
+    await interaction.response.send_message("✅ Test arrivée envoyé !", ephemeral=True)
+
+
 # Gestion des erreurs pour les checks de rôle
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error):
@@ -243,3 +357,4 @@ async def on_app_command_error(interaction: discord.Interaction, error):
 
 # === Lancer le bot ===
 client.run(TOKEN)
+
