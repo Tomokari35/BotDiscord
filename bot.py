@@ -40,11 +40,16 @@ async def on_guild_join(guild):
     if guild.id not in allowed_guilds:
         await guild.leave()
         
+from discord import Activity, ActivityType
+@client.event
+async def on_ready():
     await tree.sync()
-    activity = Activity(type=ActivityType.streaming, name="Sakura High FR RP", url="")
+    # Statut “Regarde …”
+    activity = Activity(type=ActivityType.watching, name="Sakura High FR RP")
     await client.change_presence(activity=activity)
-    print(f"🤖 Connecté et en streaming !")
+    print(f"🤖 Connecté et regarde vos commandes")
 
 client.run(TOKEN)
+
 
 
