@@ -349,6 +349,9 @@ async def testarriver(interaction: discord.Interaction):
     await interaction.response.send_message("✅ Test arrivée envoyé !", ephemeral=True)
 
 
+
+
+
 # Gestion des erreurs pour les checks de rôle
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error):
@@ -357,4 +360,5 @@ async def on_app_command_error(interaction: discord.Interaction, error):
 
 # === Lancer le bot ===
 client.run(TOKEN)
+
 
